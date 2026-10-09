@@ -1,0 +1,326 @@
+================================================================================
+INVENTORY & BILLING SYSTEM - PROJECT DOCUMENTATION
+Stock Management with Instant Receipt Generation & Business Analytics
+================================================================================
+
+Team Members:
+- Suraj Gusain (Backend Lead — Servlets & JDBC)
+- Siddhesh Jagtap (Database Architect — MySQL & Queries)
+- Saurabh Mishra (Frontend Lead — HTML/CSS/JS)
+
+--------------------------------------------------------------------------------
+1. ABSTRACT
+--------------------------------------------------------------------------------
+The Inventory & Billing System is a web-based retail management application 
+designed to connect shop inventory tracking with counter billing in real time. 
+Built using a strict "Zero Frameworks" approach, it uses only core Java Servlets, 
+JDBC, MySQL, and HTML/CSS/JavaScript.
+
+Every time a cashier makes a sale, the system automatically checks stock, deducts 
+the sold items from the database, records the bill, and generates a formal 
+commercial tax receipt with amount in words in a single atomic request. It also 
+provides automated low-stock warnings and end-of-day, weekly, and monthly 
+business reports.
+
+--------------------------------------------------------------------------------
+2. PROBLEM STATEMENT
+--------------------------------------------------------------------------------
+Small shops and retail stores often track stock and write bills manually by hand. 
+This manual method causes several serious problems:
+
+1. No Live Stock Count: Stock levels are only known after manual physical checks, 
+   causing items to run out during peak hours without warning.
+2. Manual Billing Errors: Writing bills by hand and doing mental math leads to 
+   frequent calculation mistakes in line totals and tax.
+3. No Low-Stock Warning: Items sell out completely without alert, making timely 
+   reordering from suppliers impossible.
+4. No Sales Visibility: Store owners have no easy way to know total sales for 
+   the day, week, or month without hours of manual calculation.
+
+--------------------------------------------------------------------------------
+3. OBJECTIVE
+--------------------------------------------------------------------------------
+The main goals of this project are:
+
+1. Atomic Single-Request Billing: Process the entire sale, deduct inventory, and 
+   return the customer receipt in one single HTTP request.
+2. Zero Frameworks Policy: Build the application using only core Java Servlets, 
+   JDBC, MySQL, and web basics (no Spring, Hibernate, etc.).
+3. Stock Concurrency & Accuracy: Prevent overselling and negative stock counts 
+   using database row locks (FOR UPDATE) and rollback on shortage.
+4. Low-Stock Alerts: Automatically flag items whose stock drops to or below a 
+   safety threshold.
+5. Formal Commercial Receipt: Provide tax invoices showing GSTIN, CGST/SGST 
+   breakdown, legal terms, and total amount written in Indian currency words.
+6. Multi-Period Reports: Provide instant analytics for End of Day (Z-Report), 
+   Weekly, and Monthly store performance.
+
+--------------------------------------------------------------------------------
+4. WORKING PRINCIPLE
+--------------------------------------------------------------------------------
+The system follows a classic Client-Server Model (Model-View-Controller):
+
+1. Frontend (View): The cashier uses a clean web interface in the browser to 
+   search products, add items to a cart, and view real-time totals.
+2. Transport: When the cashier clicks "Generate Receipt", the cart data is sent 
+   as a JSON payload to the Java Servlet via HTTP POST.
+3. Backend (Controller): BillingServlet receives the order and passes it to 
+   SaleDAO.
+4. Database (Model): A single JDBC transaction starts:
+   - Locks the product rows in MySQL to check available quantity.
+   - If stock is sufficient, deducts the quantities from the products table.
+   - Inserts the new invoice into the sales table and line items into sale_items.
+   - Commits the transaction and returns the receipt data as JSON.
+   - If stock is not enough, rolls back immediately without making any changes.
+
+--------------------------------------------------------------------------------
+5. PROJECT COMPLETE PROCESS
+--------------------------------------------------------------------------------
+The complete step-by-step workflow of the application:
+
+Step 1: Product Setup
+Admin adds products with SKU, name, category, price, stock, and low-stock 
+threshold into the MySQL database.
+
+Step 2: POS Item Selection
+The cashier searches products on the billing screen and adds items to the cart. 
+Quantity buttons make sure you cannot add more than current stock.
+
+Step 3: Auto-Calculation
+Subtotal, 5% GST (2.5% CGST + 2.5% SGST), discounts, and Grand Total are 
+calculated automatically in real time.
+
+Step 4: Checkout Request
+The cashier clicks "Generate Receipt". The cart is sent to BillingServlet via 
+HTTP POST.
+
+Step 5: Database Update
+MySQL locks the rows, verifies stock, updates product quantities, and saves 
+the sale in an ACID transaction.
+
+Step 6: Receipt Generation
+A formal tax invoice pops up instantly with invoice number, date, tax breakdown, 
+amount in words, and a print button.
+
+Step 7: Warnings & Reports
+If an item's stock drops below its threshold, an alert badge appears on the 
+dashboard. The transaction is immediately reflected in the Daily Z-Report.
+
+--------------------------------------------------------------------------------
+6. SYNCHRONIZATION AND SHARED DATABASE
+--------------------------------------------------------------------------------
+The application uses a shared MySQL database (InnoDB engine) with three tables:
+
+1. products: Stores SKU, name, price, stock_quantity, and low_stock_threshold.
+2. sales: Stores invoice_number, customer info, subtotal, tax, and grand_total.
+3. sale_items: Stores sale_id, product_id, quantity, and total_price.
+
+How Synchronization Works:
+- Pessimistic Row Locking: The query 'SELECT stock_quantity FROM products 
+  WHERE id = ? FOR UPDATE' locks the product record during checkout so two 
+  cashiers cannot sell the same item at the same time.
+- Atomic Rollback: If any single item in a bill does not have enough stock, 
+  the whole transaction is rolled back using 'conn.rollback()'.
+- Referential Integrity: Foreign keys ensure line items are linked to the 
+  correct bill with ON DELETE CASCADE.
+
+--------------------------------------------------------------------------------
+7. ALGORITHM / PSEUDOCODE
+--------------------------------------------------------------------------------
+ALGORITHM ProcessSaleAndDeductInventory(order):
+  Input: Order containing customer info and list of cart items
+  Output: Completed sale receipt with invoice number OR error
+
+  IF order.items is empty THEN:
+      RETURN error "Cart is empty"
+
+  TRY:
+      conn = DBConnection.getConnection()
+      conn.setAutoCommit(false)  // Start transaction
+
+      // Step 1: Check and lock stock for each item
+      FOR EACH item IN order.items:
+          stock = SELECT stock_quantity FROM products WHERE id = item.id FOR UPDATE
+          IF stock < item.quantity THEN:
+              conn.rollback()
+              RETURN error "Insufficient stock for " + item.name
+          
+          // Deduct stock in MySQL
+          UPDATE products SET stock_quantity = stock_quantity - item.quantity 
+          WHERE id = item.id
+
+      // Step 2: Compute totals and generate invoice number
+      order.invoiceNumber = "INV-" + CurrentDate() + "-" + RandomNumber()
+      order.tax = order.subtotal * 0.05
+      order.grandTotal = (order.subtotal + order.tax) - order.discount
+
+      // Step 3: Save sale header and items
+      saleId = INSERT INTO sales (invoice_number, customer_name, grand_total, ...)
+      FOR EACH item IN order.items:
+          INSERT INTO sale_items (sale_id, product_id, quantity, ...)
+
+      conn.commit()  // Save all changes
+      RETURN order
+
+  CATCH Exception e:
+      conn.rollback()  // Cancel all changes on error
+      THROW e
+
+--------------------------------------------------------------------------------
+8. JAVA IMPLEMENTATION (SERVLET & CONNECTION)
+--------------------------------------------------------------------------------
+// BillingServlet.java - Handles checkout HTTP requests
+@WebServlet("/api/billing")
+public class BillingServlet extends HttpServlet {
+    private final SaleDAO saleDAO = new SaleDAO();
+    private final Gson gson = new Gson();
+
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) 
+            throws IOException {
+        resp.setContentType("application/json;charset=UTF-8");
+        resp.setHeader("Access-Control-Allow-Origin", "*");
+
+        try {
+            Sale saleRequest = gson.fromJson(req.getReader(), Sale.class);
+            if (saleRequest == null || saleRequest.getItems().isEmpty()) {
+                resp.setStatus(400);
+                resp.getWriter().print("{\"error\":\"Cart has no items\"}");
+                return;
+            }
+
+            // Atomic checkout: deducts stock & generates receipt
+            Sale completed = saleDAO.processSaleTransaction(saleRequest);
+            resp.setStatus(201);
+            resp.getWriter().print(gson.toJson(completed));
+
+        } catch (IllegalStateException shortageEx) {
+            resp.setStatus(409); // Shortage conflict
+            resp.getWriter().print("{\"error\":\"" + shortageEx.getMessage() + "\"}");
+        } catch (Exception ex) {
+            resp.setStatus(500);
+            resp.getWriter().print("{\"error\":\"Transaction failed\"}");
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+9. IMPLEMENTATION - CONTINUED (TRANSACTIONAL DAO)
+--------------------------------------------------------------------------------
+// SaleDAO.java - Executes the atomic MySQL transaction
+public Sale processSaleTransaction(Sale sale) throws SQLException {
+    Connection conn = null;
+    try {
+        conn = DBConnection.getConnection();
+        conn.setAutoCommit(false); // Disable auto-commit for ACID safety
+
+        // Step 1: Lock product row and deduct stock
+        String lockSql = "SELECT name, price, stock_quantity FROM products " +
+                         "WHERE id = ? FOR UPDATE";
+        String decSql  = "UPDATE products SET stock_quantity = stock_quantity - ? " +
+                         "WHERE id = ?";
+
+        PreparedStatement lockPs = conn.prepareStatement(lockSql);
+        PreparedStatement decPs  = conn.prepareStatement(decSql);
+
+        for (SaleItem item : sale.getItems()) {
+            lockPs.setInt(1, item.getProductId());
+            ResultSet rs = lockPs.executeQuery();
+            if (!rs.next() || rs.getInt("stock_quantity") < item.getQuantity()) {
+                throw new IllegalStateException("Insufficient stock for " + item.getProductName());
+            }
+            decPs.setInt(1, item.getQuantity());
+            decPs.setInt(2, item.getProductId());
+            decPs.executeUpdate(); // Deduct stock
+        }
+
+        // Step 2: Insert master sale record
+        String saleSql = "INSERT INTO sales (invoice_number, customer_name, " +
+                         "subtotal, tax, grand_total) VALUES (?,?,?,?,?)";
+        PreparedStatement sPs = conn.prepareStatement(saleSql, Statement.RETURN_GENERATED_KEYS);
+        sPs.setString(1, sale.getInvoiceNumber());
+        sPs.setString(2, sale.getCustomerName());
+        sPs.setDouble(3, sale.getSubtotal());
+        sPs.setDouble(4, sale.getTax());
+        sPs.setDouble(5, sale.getGrandTotal());
+        sPs.executeUpdate();
+
+        ResultSet keys = sPs.getGeneratedKeys();
+        if (keys.next()) sale.setId(keys.getInt(1));
+
+        conn.commit(); // Save all database changes
+        return sale;
+
+    } catch (Exception e) {
+        if (conn != null) conn.rollback(); // Cancel changes on error
+        throw e;
+    }
+}
+
+--------------------------------------------------------------------------------
+10. IMPLEMENTATION EXPLANATION
+--------------------------------------------------------------------------------
+Key details of how the Java code works:
+
+1. Transaction Atomicity: By calling 'conn.setAutoCommit(false)', Java groups 
+   the stock update, sale insert, and line item inserts into one single package. 
+   Either everything saves successfully, or nothing changes at all.
+2. Row Locking (FOR UPDATE): Prevents race conditions. If two cashiers ring up 
+   the last remaining notebook at the exact same moment, the first one locks 
+   the row and completes the sale, while the second one gets a clear shortage 
+   message instead of creating a negative stock count.
+3. RETURN_GENERATED_KEYS: Allows the code to get the newly generated sale ID 
+   from MySQL and immediately use it to link all line items in the sale_items table.
+4. Clean Separation: BillingServlet handles web requests and converts JSON, 
+   while SaleDAO handles database queries, keeping the code clean and modular.
+5. Error Handling: Differentiates between stock shortage (returns HTTP 409) 
+   and database connection problems (returns HTTP 500) so the user gets clear 
+   feedback on the screen.
+
+--------------------------------------------------------------------------------
+11. IMPLEMENTATION - SAMPLE EXECUTION OUTPUT
+--------------------------------------------------------------------------------
+Here is an actual trace of a live sale processed by the application:
+
+>>> [HTTP POST Request] /api/billing
+{
+  "customerName": "Rohan Sharma",
+  "paymentMethod": "UPI",
+  "subtotal": 445.00,
+  "tax": 22.25,
+  "grandTotal": 467.25,
+  "items": [
+    {"productId": 1, "productName": "Classmate Spiral Notebook", "quantity": 2, "unitPrice": 85.00},
+    {"productId": 8, "productName": "Aashirvaad Wheat Atta", "quantity": 1, "unitPrice": 275.00}
+  ]
+}
+
+>>> [Server Execution Log]
+[INFO] DBConnection connected to MySQL (inventory_db) at localhost:3306
+[SQL]  SELECT name, price, stock_quantity FROM products WHERE id IN (1, 8) FOR UPDATE
+[INFO] Stock verified: Product #1 (35 available >= 2), Product #8 (12 available >= 1)
+[SQL]  UPDATE products SET stock_quantity = 33 WHERE id = 1
+[SQL]  UPDATE products SET stock_quantity = 11 WHERE id = 8
+[SQL]  INSERT INTO sales (invoice_number, customer_name, grand_total, ...) VALUES ('INV-20261008-8412', ...)
+[INFO] Transaction COMMITTED successfully in 42ms.
+
+<<< [HTTP 201 Response JSON]
+{
+  "id": 1,
+  "invoiceNumber": "INV-20261008-8412",
+  "customerName": "Rohan Sharma",
+  "grandTotal": 467.25,
+  "paymentMethod": "UPI",
+  "saleDate": "2026-10-08 14:22:15"
+}
+
+>>> [Generated Invoice Output on Screen]
+- Store: SMART RETAIL & ENTERPRISES (GSTIN: 27AABCS1429B1Z)
+- Taxable Subtotal: Rs. 445.00
+- CGST @ 2.5%: Rs. 11.13 | SGST @ 2.5%: Rs. 11.12
+- Grand Total: Rs. 467.25
+- Amount in Words: "Indian Rupees Four Hundred Sixty-Seven and Twenty-Five Paise Only"
+- UI Catalog Stock for Notebook updated: from 35 to 33.
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================

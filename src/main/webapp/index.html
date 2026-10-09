@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory & Billing System | Instant Receipt Generation</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Google Fonts for clean modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Header Section (Matches Slide 1 Navy Branding) -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-icon">📦</div>
+                <div>
+                    <h1 class="brand-title">Inventory & Billing System</h1>
+                    <p class="brand-subtitle">Stock Management with Instant Receipt Generation</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <div id="backend-status" class="status-badge status-live">
+                    <span class="status-dot"></span>
+                    <span id="backend-status-text">Connecting...</span>
+                </div>
+                <div class="team-tag">Java Servlets · JDBC · MySQL</div>
+            </div>
+        </div>
+
+        <!-- Quick Summary Metrics Bar -->
+        <div class="metrics-bar">
+            <div class="metric-card">
+                <span class="metric-label">Total Products</span>
+                <span class="metric-value" id="metric-total-products">0</span>
+            </div>
+            <div class="metric-card metric-warning" id="metric-card-low-stock" onclick="switchTab('alerts')">
+                <span class="metric-label">Low-Stock Alerts</span>
+                <span class="metric-value" id="metric-low-stock">0</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">Today's Sales</span>
+                <span class="metric-value" id="metric-today-orders">0</span>
+            </div>
+            <div class="metric-card metric-highlight">
+                <span class="metric-label">Today's Revenue</span>
+                <span class="metric-value" id="metric-today-revenue">₹0.00</span>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="billing" onclick="switchTab('billing')">
+                <span class="tab-icon">🧾</span> Billing Screen (POS)
+            </button>
+            <button class="tab-btn" data-tab="inventory" onclick="switchTab('inventory')">
+                <span class="tab-icon">📦</span> Stock Inventory
+            </button>
+            <button class="tab-btn" data-tab="alerts" onclick="switchTab('alerts')">
+                <span class="tab-icon">⚠️</span> Low-Stock Warnings
+                <span class="badge-pill" id="nav-alert-count">0</span>
+            </button>
+            <button class="tab-btn" data-tab="history" onclick="switchTab('history')">
+                <span class="tab-icon">📜</span> Sales History
+            </button>
+            <button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics')">
+                <span class="tab-icon">📊</span> Reports & Analytics
+            </button>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <main class="app-main">
+
+        <!-- ============================================================== -->
+        <!-- TAB 1: BILLING SCREEN (RECEIPT GENERATOR)                       -->
+        <!-- ============================================================== -->
+        <section id="tab-billing" class="tab-content active">
+            <div class="billing-grid">
+                
+                <!-- Left: Catalog & Item Selection -->
+                <div class="panel catalog-panel">
+                    <div class="panel-header">
+                        <h2>Select Products</h2>
+                        <div class="catalog-filters">
+                            <input type="text" id="pos-search-input" class="form-input search-input" placeholder="Search by name or SKU..." oninput="filterPosCatalog()">
+                            <select id="pos-category-filter" class="form-select" onchange="filterPosCatalog()">
+                                <option value="">All Categories</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="pos-catalog-grid" id="pos-catalog-container">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Right: Billing Cart & Checkout -->
+                <div class="panel cart-panel">
+                    <div class="panel-header">
+                        <h2>Active Bill</h2>
+                        <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">Clear</button>
+                    </div>
+
+                    <!-- Customer Information Form -->
+                    <div class="customer-info-grid">
+                        <div class="form-group">
+                            <label for="cust-name">Customer Name</label>
+                            <input type="text" id="cust-name" class="form-input form-input-sm" placeholder="Walk-in Customer" value="Walk-in Customer">
+                        </div>
+                        <div class="form-group">
+                            <label for="cust-phone">Phone Number</label>
+                            <input type="tel" id="cust-phone" class="form-input form-input-sm" placeholder="e.g. 9876543210">
+                        </div>
+                        <div class="form-group">
+                            <label for="payment-method">Payment Mode</label>
+                            <select id="payment-method" class="form-select form-select-sm">
+                                <option value="Cash">Cash</option>
+                                <option value="UPI / QR">UPI / QR</option>
+                                <option value="Card">Card</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Cart Items Table -->
+                    <div class="cart-table-wrapper">
+                        <table class="data-table cart-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Price</th>
+                                    <th style="width: 110px;">Qty</th>
+                                    <th>Total</th>
+                                    <th style="width: 40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cart-items-body">
+                                <tr>
+                                    <td colspan="5" class="empty-state">No items added yet. Click an item from the left to start billing.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Financial Summary & Total -->
+                    <div class="bill-summary">
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span id="bill-subtotal">₹0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>GST / Tax (5%):</span>
+                            <span id="bill-tax">₹0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Discount:</span>
+                            <div class="discount-input-wrapper">
+                                <span>₹</span>
+                                <input type="number" id="bill-discount" class="form-input-inline" min="0" value="0" step="1" oninput="calculateBillTotals()">
+                            </div>
+                        </div>
+                        <div class="summary-row grand-total-row">
+                            <span>Grand Total:</span>
+                            <span id="bill-grand-total">₹0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Core Action Button: Instant Receipt Generation & Stock Deduction -->
+                    <button id="btn-generate-receipt" class="btn btn-primary btn-block btn-lg" onclick="processSaleAndGenerateReceipt()">
+                        <span class="btn-icon">⚡</span> Generate Receipt & Update Stock
+                    </button>
+                    <p class="process-note">Slide 5 Flow: Deducts inventory in MySQL & generates receipt in a single transaction.</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TAB 2: STOCK INVENTORY (ADD & UPDATE STOCK)                    -->
+        <!-- ============================================================== -->
+        <section id="tab-inventory" class="tab-content">
+            <div class="panel">
+                <div class="panel-header flex-between">
+                    <div>
+                        <h2>Inventory Stock Management</h2>
+                        <p class="text-muted">Manage product catalog, current stock quantities, and prices.</p>
+                    </div>
+                    <div class="actions-group">
+                        <button class="btn btn-primary" onclick="openAddProductModal()">
+                            <span class="btn-icon">➕</span> Add New Product
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search & Filters -->
+                <div class="table-controls">
+                    <input type="text" id="inv-search-input" class="form-input search-input" placeholder="Search products by SKU or Name..." oninput="renderInventoryTable()">
+                    <select id="inv-category-filter" class="form-select" onchange="renderInventoryTable()">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+
+                <!-- Products Table -->
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Min Alert Threshold</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TAB 3: LOW-STOCK WARNINGS                                      -->
+        <!-- ============================================================== -->
+        <section id="tab-alerts" class="tab-content">
+            <div class="panel">
+                <div class="alert-banner">
+                    <div class="alert-banner-icon">⚠️</div>
+                    <div>
+                        <h3>Low-Stock Alert Center</h3>
+                        <p>These products are currently at or below their set minimum threshold. Restock them promptly to avoid stockouts.</p>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Unit Price</th>
+                                <th>Current Stock</th>
+                                <th>Low-Stock Threshold</th>
+                                <th>Deficit / Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="low-stock-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TAB 4: SALES HISTORY (SEARCHABLE BY DATE & ITEM)               -->
+        <!-- ============================================================== -->
+        <section id="tab-history" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Sales & Receipt History</h2>
+                        <p class="text-muted">Slide 3: Every past receipt searchable by date or item.</p>
+                    </div>
+                </div>
+
+                <!-- Search & Filter Controls -->
+                <div class="history-filters">
+                    <div class="filter-col">
+                        <label for="filter-from-date">From Date</label>
+                        <input type="date" id="filter-from-date" class="form-input">
+                    </div>
+                    <div class="filter-col">
+                        <label for="filter-to-date">To Date</label>
+                        <input type="date" id="filter-to-date" class="form-input">
+                    </div>
+                    <div class="filter-col flex-grow">
+                        <label for="filter-search-item">Search by Product Name / Invoice</label>
+                        <input type="text" id="filter-search-item" class="form-input" placeholder="e.g. Notebook or INV-2026...">
+                    </div>
+                    <div class="filter-col filter-actions">
+                        <button class="btn btn-secondary" onclick="applyHistoryFilters()">Filter</button>
+                        <button class="btn btn-outline" onclick="resetHistoryFilters()">Reset</button>
+                    </div>
+                </div>
+
+                <!-- Sales History Table -->
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Date & Time</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Payment</th>
+                                <th>Grand Total</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TAB 5: REPORTS & ANALYTICS (DAY, WEEK, MONTH)                  -->
+        <!-- ============================================================== -->
+        <section id="tab-analytics" class="tab-content">
+            <div class="panel">
+                <div class="panel-header flex-between">
+                    <div>
+                        <h2>Business Reports & Product Analytics</h2>
+                        <p class="text-muted">Comprehensive End-of-Day, Weekly, and Monthly sales metrics and product performance.</p>
+                    </div>
+                    <div class="actions-group">
+                        <button class="btn btn-primary" onclick="openPrintableReportModal()">
+                            <span class="btn-icon">🖨️</span> Print Period Report (Z-Report)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Period Controls -->
+                <div class="analytics-control-bar">
+                    <div class="period-button-group">
+                        <button type="button" class="btn-period active" id="btn-period-day" onclick="setAnalyticsPeriod('day')">
+                            📅 End of Day (Today)
+                        </button>
+                        <button type="button" class="btn-period" id="btn-period-week" onclick="setAnalyticsPeriod('week')">
+                            🗓️ End of Week (7 Days)
+                        </button>
+                        <button type="button" class="btn-period" id="btn-period-month" onclick="setAnalyticsPeriod('month')">
+                            📊 End of Month (Monthly)
+                        </button>
+                    </div>
+
+                    <div class="custom-range-group">
+                        <span class="range-separator">Custom:</span>
+                        <input type="date" id="analytics-from-date" class="form-input form-input-sm" title="From Date">
+                        <span>to</span>
+                        <input type="date" id="analytics-to-date" class="form-input form-input-sm" title="To Date">
+                        <button class="btn btn-sm btn-secondary" onclick="applyCustomAnalyticsRange()">Apply</button>
+                    </div>
+                </div>
+
+                <!-- Active Report Period Info Banner -->
+                <div class="report-period-banner" id="analytics-period-banner">
+                    <span class="banner-title" id="analytics-banner-title">End of Day Report</span>
+                    <span class="banner-range" id="analytics-banner-range">Date: Today</span>
+                </div>
+
+                <!-- 4 Classic KPI Summary Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <span class="kpi-icon">💰</span>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Gross Sales Revenue</span>
+                            <span class="kpi-value" id="kpi-gross-revenue">₹0.00</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-icon">🧾</span>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Total Bills Issued</span>
+                            <span class="kpi-value" id="kpi-total-orders">0</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-icon">🎯</span>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Average Bill Value</span>
+                            <span class="kpi-value" id="kpi-avg-order">₹0.00</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-icon">📦</span>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Total Items Sold</span>
+                            <span class="kpi-value" id="kpi-units-sold">0 units</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Dual Grid -->
+                <div class="analytics-grid">
+                    
+                    <!-- Left: Product Performance Table -->
+                    <div class="analytics-card flex-2">
+                        <div class="card-title-row">
+                            <h3>Product Sales Ranking</h3>
+                            <span class="text-muted" id="prod-rank-count">Ranked by volume</span>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Product Name</th>
+                                        <th>Category</th>
+                                        <th>Units Sold</th>
+                                        <th>Revenue</th>
+                                        <th>Current Stock</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="product-analytics-tbody">
+                                    <tr>
+                                        <td colspan="7" class="empty-state">Loading product analytics...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Right: Category Breakdown & Daily Trend -->
+                    <div class="analytics-card flex-1">
+                        <div class="card-title-row">
+                            <h3>Category Performance</h3>
+                        </div>
+                        <div class="table-wrapper mb-3">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Units</th>
+                                        <th>Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="category-analytics-tbody">
+                                    <tr><td colspan="3" class="empty-state">No category data.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="card-title-row mt-3">
+                            <h3>Daily Sales Trend</h3>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Bills</th>
+                                        <th>Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="daily-trend-tbody">
+                                    <tr><td colspan="3" class="empty-state">No trend data.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Credits -->
+    <footer class="app-footer">
+        <p><strong>Inventory & Billing System</strong> | Academic Project</p>
+        <p class="footer-team">
+            <span><strong>Suraj Gusain</strong> (Backend - Servlets & JDBC)</span> · 
+            <span><strong>Siddhesh Jagtap</strong> (Database Design & Queries)</span> · 
+            <span><strong>Saurabh Mishra</strong> (Frontend - HTML/CSS/JS)</span>
+        </p>
+    </footer>
+
+    <!-- ============================================================== -->
+    <!-- MODAL 1: ADD / EDIT PRODUCT                                    -->
+    <!-- ============================================================== -->
+    <div id="modal-product" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-product-title">Add New Product</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-product')">&times;</button>
+            </div>
+            <form id="product-form" onsubmit="handleProductFormSubmit(event)">
+                <input type="hidden" id="prod-id">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label for="prod-sku">SKU Code</label>
+                            <input type="text" id="prod-sku" class="form-input" placeholder="e.g. SKU-1015" required>
+                        </div>
+                        <div class="form-group flex-2">
+                            <label for="prod-category">Category</label>
+                            <input type="text" id="prod-category" class="form-input" placeholder="e.g. Stationery, Groceries" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="prod-name">Product Name</label>
+                        <input type="text" id="prod-name" class="form-input" placeholder="Full product description" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label for="prod-price">Unit Price (₹)</label>
+                            <input type="number" id="prod-price" class="form-input" step="0.01" min="0" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="prod-stock">Stock Quantity</label>
+                            <input type="number" id="prod-stock" class="form-input" min="0" placeholder="0" required>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="prod-threshold">Alert Threshold</label>
+                            <input type="number" id="prod-threshold" class="form-input" min="1" value="5" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-product')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-product">Save Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODAL 2: QUICK RESTOCK MODAL                                   -->
+    <!-- ============================================================== -->
+    <div id="modal-restock" class="modal-backdrop">
+        <div class="modal-card modal-card-sm">
+            <div class="modal-header">
+                <h3>Restock Inventory</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-restock')">&times;</button>
+            </div>
+            <form id="restock-form" onsubmit="handleRestockSubmit(event)">
+                <input type="hidden" id="restock-product-id">
+                <div class="modal-body">
+                    <p id="restock-product-label" class="text-bold mb-2"></p>
+                    <div class="form-group">
+                        <label for="restock-qty">Quantity to Add</label>
+                        <input type="number" id="restock-qty" class="form-input" min="1" value="10" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-restock')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add to Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODAL 3: FORMAL COMMERCIAL TAX INVOICE / CASH MEMO             -->
+    <!-- ============================================================== -->
+    <div id="modal-receipt" class="modal-backdrop">
+        <div class="modal-card modal-receipt-formal-card">
+            <div class="modal-header no-print">
+                <h3>Commercial Tax Invoice</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-receipt')">&times;</button>
+            </div>
+            
+            <div class="modal-body formal-receipt-modal-body">
+                <!-- Formal Commercial Tax Invoice Document -->
+                <div class="formal-invoice-sheet" id="printable-receipt">
+                    
+                    <!-- Invoice Top Header -->
+                    <div class="invoice-masthead">
+                        <div class="masthead-main">
+                            <h2 class="company-name">SMART RETAIL & ENTERPRISES</h2>
+                            <p class="company-tagline">Stock Management & Commercial Invoicing System</p>
+                            <p class="company-address">104 Commercial Chambers, Station Road, Mumbai - 400001</p>
+                            <p class="company-contact">
+                                <span><strong>GSTIN:</strong> 27AABCS1429B1Z</span> &nbsp;|&nbsp; 
+                                <span><strong>State Code:</strong> 27 (Maharashtra)</span> &nbsp;|&nbsp; 
+                                <span><strong>Ph:</strong> +91 98765 43210</span>
+                            </p>
+                        </div>
+                        <div class="invoice-badge-box">
+                            <span class="invoice-type-title">TAX INVOICE</span>
+                            <span class="invoice-type-subtitle">CASH / CREDIT MEMO</span>
+                            <span class="invoice-copy-tag">[ ORIGINAL FOR RECIPIENT ]</span>
+                        </div>
+                    </div>
+
+                    <!-- Meta & Customer Information Grid -->
+                    <div class="invoice-meta-grid">
+                        <div class="meta-block">
+                            <div class="meta-row">
+                                <span class="meta-label">Invoice No:</span>
+                                <strong class="meta-value" id="rec-invoice-no">INV-20261008-0001</strong>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">Invoice Date:</span>
+                                <span class="meta-value" id="rec-date">08 Oct 2026</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">Time of Issue:</span>
+                                <span class="meta-value" id="rec-time">12:30 PM</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">Place of Supply:</span>
+                                <span class="meta-value">Maharashtra (27)</span>
+                            </div>
+                        </div>
+
+                        <div class="meta-block">
+                            <div class="meta-row">
+                                <span class="meta-label">Customer Name:</span>
+                                <strong class="meta-value" id="rec-customer-name">Walk-in Customer</strong>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">Contact / Phone:</span>
+                                <span class="meta-value" id="rec-customer-phone">-</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">Payment Mode:</span>
+                                <span class="meta-value" id="rec-payment-mode">Cash</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">POS Terminal:</span>
+                                <span class="meta-value">Terminal 01 (Academic Demo)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Itemized Table with Generous Word Spaces & Borders -->
+                    <table class="formal-invoice-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 35px; text-align: center;">#</th>
+                                <th style="text-align: left;">Item Description</th>
+                                <th style="width: 90px; text-align: center;">SKU Code</th>
+                                <th style="width: 50px; text-align: center;">Qty</th>
+                                <th style="width: 80px; text-align: right;">Unit Rate (₹)</th>
+                                <th style="width: 95px; text-align: right;">Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rec-items-body">
+                            <!-- Injected by JavaScript -->
+                        </tbody>
+                    </table>
+
+                    <!-- Financial Summary & Tax Breakdown Grid -->
+                    <div class="invoice-financials-wrapper">
+                        
+                        <!-- Left Side: Amount in Words & Terms -->
+                        <div class="financials-left">
+                            <div class="words-container">
+                                <span class="words-label">Amount in Words:</span>
+                                <p class="words-text" id="rec-amount-words">Indian Rupees Zero Only</p>
+                            </div>
+
+                            <div class="invoice-terms-box">
+                                <span class="terms-title">Terms & Conditions of Sale:</span>
+                                <ol class="terms-list">
+                                    <li>Goods once sold will be accepted for return within 7 days with original invoice.</li>
+                                    <li>Subject to local municipal jurisdiction.</li>
+                                    <li>This is a computer-generated tax invoice and requires no physical seal if digitally authenticated.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Exact Calculations -->
+                        <div class="financials-right">
+                            <div class="calc-row">
+                                <span>Taxable Subtotal:</span>
+                                <span class="calc-num" id="rec-subtotal">₹0.00</span>
+                            </div>
+                            <div class="calc-row">
+                                <span>CGST @ 2.50%:</span>
+                                <span class="calc-num" id="rec-cgst">₹0.00</span>
+                            </div>
+                            <div class="calc-row">
+                                <span>SGST @ 2.50%:</span>
+                                <span class="calc-num" id="rec-sgst">₹0.00</span>
+                            </div>
+                            <div class="calc-row" id="rec-discount-row">
+                                <span>Discount / Rebate:</span>
+                                <span class="calc-num" id="rec-discount">-₹0.00</span>
+                            </div>
+                            <div class="calc-row grand-total-calc-row">
+                                <span>GRAND TOTAL:</span>
+                                <span class="calc-num grand-total-num" id="rec-grand-total">₹0.00</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Invoice Footer & Signatory -->
+                    <div class="invoice-bottom-footer">
+                        <div class="barcode-area">
+                            <div class="simulated-barcode"></div>
+                            <span class="barcode-number" id="rec-barcode-number">INV-20261008-0001</span>
+                        </div>
+                        <div class="signatory-area">
+                            <span class="for-company">For SMART RETAIL & ENTERPRISES</span>
+                            <div class="signature-line-box">
+                                <span class="signature-placeholder">Suraj · Siddhesh · Saurabh</span>
+                            </div>
+                            <span class="signatory-caption">Authorized Signatory</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer no-print">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-receipt')">Close</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    <span class="btn-icon">🖨️</span> Print Tax Invoice
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODAL 4: PRINTABLE STORE PERIOD REPORT (Z-REPORT)              -->
+    <!-- ============================================================== -->
+    <div id="modal-period-report" class="modal-backdrop">
+        <div class="modal-card modal-receipt-formal-card">
+            <div class="modal-header no-print">
+                <h3 id="report-modal-header-title">Store Sales & Product Report</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-period-report')">&times;</button>
+            </div>
+            
+            <div class="modal-body formal-receipt-modal-body">
+                <div class="formal-invoice-sheet" id="printable-store-report">
+                    
+                    <div class="invoice-masthead">
+                        <div class="masthead-main">
+                            <h2 class="company-name">SMART RETAIL & ENTERPRISES</h2>
+                            <p class="company-tagline">Store Business Summary & Product Turnover Report</p>
+                            <p class="company-address">Plot 42, Commercial Avenue, Mumbai - 400001</p>
+                        </div>
+                        <div class="invoice-badge-box">
+                            <span class="invoice-type-title" id="rep-period-title">END OF DAY REPORT</span>
+                            <span class="invoice-type-subtitle" id="rep-period-date-range">Date: 08 Oct 2026</span>
+                            <span class="invoice-copy-tag">[ MANAGEMENT COPY ]</span>
+                        </div>
+                    </div>
+
+                    <!-- Summary KPI Box -->
+                    <div class="report-kpi-summary-box">
+                        <div class="rep-kpi-item">
+                            <span class="rep-kpi-lbl">Total Gross Revenue</span>
+                            <strong class="rep-kpi-val" id="rep-kpi-revenue">₹0.00</strong>
+                        </div>
+                        <div class="rep-kpi-item">
+                            <span class="rep-kpi-lbl">Total Invoices</span>
+                            <strong class="rep-kpi-val" id="rep-kpi-orders">0</strong>
+                        </div>
+                        <div class="rep-kpi-item">
+                            <span class="rep-kpi-lbl">Avg Ticket Size</span>
+                            <strong class="rep-kpi-val" id="rep-kpi-avg">₹0.00</strong>
+                        </div>
+                        <div class="rep-kpi-item">
+                            <span class="rep-kpi-lbl">Items Sold</span>
+                            <strong class="rep-kpi-val" id="rep-kpi-units">0</strong>
+                        </div>
+                    </div>
+
+                    <!-- Product Sales Section in Report -->
+                    <h4 class="report-section-title">Itemized Product Sales & Movement</h4>
+                    <table class="formal-invoice-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th style="text-align: center;">Units Sold</th>
+                                <th style="text-align: right;">Revenue (₹)</th>
+                                <th style="text-align: center;">Stock Left</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rep-products-tbody">
+                            <!-- Injected by JavaScript -->
+                        </tbody>
+                    </table>
+
+                    <!-- Category Breakdown in Report -->
+                    <h4 class="report-section-title" style="margin-top: 1.25rem;">Category Revenue Breakdown</h4>
+                    <table class="formal-invoice-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th style="text-align: center;">Units Sold</th>
+                                <th style="text-align: right;">Total Revenue (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rep-categories-tbody">
+                            <!-- Injected by JavaScript -->
+                        </tbody>
+                    </table>
+
+                    <div class="invoice-bottom-footer" style="margin-top: 1.5rem;">
+                        <p class="text-muted" style="font-size: 0.75rem;">Generated on: <span id="rep-generated-timestamp"></span> | System: Inventory & Billing POS</p>
+                        <div class="signatory-area">
+                            <span class="for-company">Store Manager / Cashier</span>
+                            <div class="signature-line-box" style="height: 35px;"></div>
+                            <span class="signatory-caption">Verification Stamp & Signature</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer no-print">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-period-report')">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printStoreReport()">
+                    <span class="btn-icon">🖨️</span> Print Store Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

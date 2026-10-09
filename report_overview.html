@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Project Report Overview - Inventory & Billing System</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 10mm 12mm;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            color: #0f172a;
+            background: #ffffff;
+            font-size: 8.8pt;
+            line-height: 1.35;
+        }
+
+        .page {
+            width: 100%;
+            height: 275mm;
+            max-height: 275mm;
+            overflow: hidden;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2mm 0;
+        }
+
+        .page-2 {
+            page-break-after: avoid;
+        }
+
+        /* Header Masthead */
+        .header-masthead {
+            border-bottom: 2.5px solid #1e3a8a;
+            padding-bottom: 5px;
+            margin-bottom: 7px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .project-title {
+            font-size: 17pt;
+            font-weight: 800;
+            color: #1e3a8a;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .project-subtitle {
+            font-size: 9.5pt;
+            font-weight: 600;
+            color: #3b82f6;
+            margin-top: 2px;
+        }
+
+        .badge-academic {
+            text-align: right;
+            font-size: 7.5pt;
+            color: #64748b;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+
+        .badge-academic span {
+            display: block;
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        /* Section Headings */
+        .section-title {
+            font-size: 9.5pt;
+            font-weight: 700;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1.5px solid #cbd5e1;
+            padding-bottom: 2px;
+            margin-bottom: 5px;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Team Cards */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .team-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-left: 3px solid #1e3a8a;
+            padding: 4px 6px;
+            border-radius: 3px;
+        }
+
+        .team-name {
+            font-weight: 700;
+            font-size: 8.5pt;
+            color: #0f172a;
+        }
+
+        .team-role {
+            font-size: 7.5pt;
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .team-desc {
+            font-size: 7pt;
+            color: #475569;
+            margin-top: 2px;
+            line-height: 1.2;
+        }
+
+        /* Two Column Layout */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .info-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 5px 7px;
+            border-radius: 3px;
+        }
+
+        .info-box h4 {
+            font-size: 8pt;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 3px;
+        }
+
+        .info-box ul {
+            padding-left: 14px;
+            font-size: 7.5pt;
+            color: #334155;
+        }
+
+        .info-box li {
+            margin-bottom: 2px;
+        }
+
+        /* Tables */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7.5pt;
+            margin-bottom: 6px;
+        }
+
+        .report-table th {
+            background: #1e3a8a;
+            color: #ffffff;
+            font-weight: 700;
+            padding: 3.5px 5px;
+            text-align: left;
+            border: 1px solid #1e3a8a;
+        }
+
+        .report-table td {
+            padding: 3px 5px;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+        }
+
+        .report-table tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        /* Slide 5 Workflow Flowchart Box */
+        .workflow-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 4px;
+            padding: 6px 8px;
+            margin-bottom: 6px;
+        }
+
+        .workflow-header {
+            font-weight: 700;
+            font-size: 8pt;
+            color: #1e3a8a;
+            margin-bottom: 4px;
+        }
+
+        .flow-steps {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+            gap: 4px;
+        }
+
+        .flow-step {
+            background: #ffffff;
+            border: 1px solid #93c5fd;
+            border-radius: 3px;
+            padding: 4px 6px;
+            flex: 1;
+            font-size: 7pt;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        .flow-step strong {
+            display: block;
+            font-size: 7.5pt;
+            color: #1e3a8a;
+        }
+
+        .flow-arrow {
+            color: #2563eb;
+            font-weight: bold;
+            font-size: 9pt;
+        }
+
+        /* Highlights & Tags */
+        .tag-pill {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            font-size: 6.5pt;
+            font-weight: 700;
+            padding: 1px 4px;
+            border-radius: 2px;
+            margin-right: 3px;
+        }
+
+        .tag-pill-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .page-footer {
+            border-top: 1px solid #cbd5e1;
+            padding-top: 3px;
+            font-size: 7pt;
+            color: #64748b;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- =================================================================== -->
+    <!-- PAGE 1: ARCHITECTURE, PROBLEM, TEAM & WORKFLOW                     -->
+    <!-- =================================================================== -->
+    <div class="page page-1">
+        <div>
+            <!-- Masthead -->
+            <div class="header-masthead">
+                <div>
+                    <h1 class="project-title">Inventory & Billing System</h1>
+                    <p class="project-subtitle">Stock Management with Instant Receipt Generation & Business Analytics</p>
+                </div>
+                <div class="badge-academic">
+                    <span>ACADEMIC PROJECT OVERVIEW</span>
+                    Java Enterprise Stack · MySQL · Web
+                </div>
+            </div>
+
+            <!-- Team Roles -->
+            <div class="section-title">👥 Project Team & Core Responsibilities</div>
+            <div class="team-grid">
+                <div class="team-card">
+                    <div class="team-name">Suraj Gusain</div>
+                    <div class="team-role">Backend Lead</div>
+                    <div class="team-desc">Java Servlets (Servlet 4.0), JDBC connection pooling, ACID transaction management & REST API endpoints.</div>
+                </div>
+                <div class="team-card">
+                    <div class="team-name">Siddhesh Jagtap</div>
+                    <div class="team-role">Database Architect</div>
+                    <div class="team-desc">MySQL relational schema, constraints, row-level locking queries, low-stock thresholding & analytics queries.</div>
+                </div>
+                <div class="team-card">
+                    <div class="team-name">Saurabh Mishra</div>
+                    <div class="team-role">Frontend Lead</div>
+                    <div class="team-desc">HTML5/CSS3/JS, Classic accounting POS interface, formal Tax Invoicing, GST split & dynamic words conversion.</div>
+                </div>
+            </div>
+
+            <!-- Problem vs Solution -->
+            <div class="section-title">🎯 Problem Statement & Engineering Objectives</div>
+            <div class="two-col">
+                <div class="info-box">
+                    <h4>Problems in Traditional Manual Retail (Slide 2):</h4>
+                    <ul>
+                        <li><strong>No Live Stock Count:</strong> Stock balances only discovered after physical checks, causing customer stockouts.</li>
+                        <li><strong>Manual, Error-Prone Invoicing:</strong> Math errors in rushed mental totals and tax additions.</li>
+                        <li><strong>Zero Low-Stock Warning:</strong> Fast-moving goods deplete completely with no warning.</li>
+                    </ul>
+                </div>
+                <div class="info-box">
+                    <h4>The Engineered Digital Solution (Slide 3):</h4>
+                    <ul>
+                        <li><strong>Real-Time Stock Synchronization:</strong> Every sale atomically updates inventory stock quantities.</li>
+                        <li><strong>Single-Step Receipt Generator:</strong> Point-and-click billing with automated 5% GST and instant receipt.</li>
+                        <li><strong>Low-Stock Warning Center:</strong> Automated flags when $\text{Stock} \le \text{Threshold}$ with restock shortcuts.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tech Stack -->
+            <div class="section-title">💻 Technology Stack (Slide 4 — "No Frameworks Policy")</div>
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th style="width: 22%;">Layer</th>
+                        <th style="width: 38%;">Technology</th>
+                        <th style="width: 40%;">Architectural Role & Justification</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Frontend</strong></td>
+                        <td>HTML5, CSS3, Modern JavaScript</td>
+                        <td>Classic business UI, Fetch API, live cart calculation, printable media rules.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backend</strong></td>
+                        <td>Java Servlets (Servlet 4.0 API)</td>
+                        <td>Lightweight HTTP request dispatching, JSON serialization (Gson), no Spring/framework bloat.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DB Access</strong></td>
+                        <td>JDBC API (<code style="font-size:7pt;">java.sql.*</code>)</td>
+                        <td>PreparedStatements, explicit transaction control (<code style="font-size:7pt;">commit / rollback</code>), connection safety.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Database</strong></td>
+                        <td>MySQL 8.0 (InnoDB Engine)</td>
+                        <td>ACID relational data storage, foreign key constraints, row-level locking.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Slide 5 Flowchart -->
+            <div class="section-title">⚡ Core Transaction Workflow (Slide 5 Single-Request Flow)</div>
+            <div class="workflow-box">
+                <div class="workflow-header">Atomic Execution Pipeline: Single Request Checkout & Inventory Deduction</div>
+                <div class="flow-steps">
+                    <div class="flow-step">
+                        <strong>1. Billing Screen</strong>
+                        Cashier picks items; total is auto-calculated.
+                    </div>
+                    <div class="flow-arrow">➔</div>
+                    <div class="flow-step">
+                        <strong>2. BillingServlet</strong>
+                        Reads order payload; opens JDBC transaction.
+                    </div>
+                    <div class="flow-arrow">➔</div>
+                    <div class="flow-step">
+                        <strong>3. Row-Level Lock</strong>
+                        <code style="font-size:6.5pt;">SELECT ... FOR UPDATE</code> verifies stock limits.
+                    </div>
+                    <div class="flow-arrow">➔</div>
+                    <div class="flow-step">
+                        <strong>4. MySQL Update</strong>
+                        Deducts stock, writes sale & items; commits.
+                    </div>
+                    <div class="flow-arrow">➔</div>
+                    <div class="flow-step">
+                        <strong>5. Instant Receipt</strong>
+                        Sends back JSON; renders formal Tax Invoice.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-footer">
+            <span>Inventory & Billing System · Academic Capstone Report</span>
+            <span>Page 1 of 2</span>
+        </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- PAGE 2: DATABASE, INVOICE, ANALYTICS & VERIFICATION                -->
+    <!-- =================================================================== -->
+    <div class="page page-2">
+        <div>
+            <!-- Header for Page 2 -->
+            <div class="header-masthead" style="margin-bottom: 5px;">
+                <div>
+                    <h2 style="font-size: 13pt; font-weight: 800; color: #1e3a8a;">Database Design, Commercial Invoicing & Analytics</h2>
+                    <p class="project-subtitle" style="font-size: 8pt;">Relational Schema, Formal Accounting Invoicing, and Multi-Period Management Reporting</p>
+                </div>
+                <div class="badge-academic">
+                    <span>CAPSTONE SUMMARY</span>
+                    Detailed Modules
+                </div>
+            </div>
+
+            <!-- Database Design -->
+            <div class="section-title">🗄️ Database Architecture & Data Dictionary (Siddhesh Jagtap)</div>
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th style="width: 18%;">Table Name</th>
+                        <th style="width: 25%;">Primary & Foreign Keys</th>
+                        <th style="width: 32%;">Key Attributes</th>
+                        <th style="width: 25%;">Integrity Constraints</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code style="font-size:7.5pt;">products</code></td>
+                        <td><code style="font-size:7pt;">id</code> (PK, Auto-inc)</td>
+                        <td><code style="font-size:7pt;">sku, name, price, stock_quantity, low_stock_threshold</code></td>
+                        <td><code style="font-size:7pt;">sku UNIQUE, stock >= 0</code></td>
+                    </tr>
+                    <tr>
+                        <td><code style="font-size:7.5pt;">sales</code></td>
+                        <td><code style="font-size:7pt;">id</code> (PK), <code style="font-size:7pt;">invoice_number</code> (UK)</td>
+                        <td><code style="font-size:7pt;">customer_name, subtotal, tax, grand_total, sale_date</code></td>
+                        <td><code style="font-size:7pt;">invoice_number UNIQUE</code></td>
+                    </tr>
+                    <tr>
+                        <td><code style="font-size:7.5pt;">sale_items</code></td>
+                        <td><code style="font-size:7pt;">id</code> (PK), <code style="font-size:7pt;">sale_id</code> (FK), <code style="font-size:7pt;">product_id</code> (FK)</td>
+                        <td><code style="font-size:7pt;">product_name, unit_price, quantity, total_price</code></td>
+                        <td><code style="font-size:7pt;">CASCADE ON DELETE, quantity > 0</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Invoicing & Classic UI -->
+            <div class="section-title">🧾 Formal Commercial Tax Invoice (Saurabh Mishra)</div>
+            <div class="two-col">
+                <div class="info-box">
+                    <h4>Commercial Tax Invoice Specification:</h4>
+                    <ul>
+                        <li><span class="tag-pill">GSTIN</span> Registered Tax Header: <strong>27AABCS1429B1Z</strong> | State Code 27.</li>
+                        <li><span class="tag-pill">Tax Split</span> Itemized Taxable Subtotal, <strong>CGST @ 2.50%</strong>, and <strong>SGST @ 2.50%</strong>.</li>
+                        <li><span class="tag-pill">Words</span> Dynamic <strong>Amount in Words</strong> (e.g. <em>"Indian Rupees Five Hundred Forty-One Only"</em> via Indian currency converter).</li>
+                        <li><span class="tag-pill">Legal</span> 3-point return policy, municipal jurisdiction & authorized sign box.</li>
+                    </ul>
+                </div>
+                <div class="info-box">
+                    <h4>Classic Business POS Interface:</h4>
+                    <ul>
+                        <li>High-contrast slate/navy theme with crisp tabular lines.</li>
+                        <li>Real-time cart quantity steppers with stock ceiling checks.</li>
+                        <li>Dual-Mode API client (<code style="font-size:7pt;">api.js</code>) enabling seamless live Java/MySQL connection or instant standalone browser presentation mode.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Analytics Engine -->
+            <div class="section-title">📊 Multi-Period Sales & Product Analytics</div>
+            <div class="two-col">
+                <div class="info-box">
+                    <h4>Reporting Horizons:</h4>
+                    <ul>
+                        <li><strong>📅 End of Day (Z-Report):</strong> Daily register balance, gross sales revenue, completed invoice count, and average order basket value.</li>
+                        <li><strong>🗓️ End of Week (7 Days):</strong> Weekly revenue trajectory & daily turnover.</li>
+                        <li><strong>📊 End of Month (Turnover):</strong> Monthly movement & category split.</li>
+                    </ul>
+                </div>
+                <div class="info-box">
+                    <h4>Analytical Metrics & Features:</h4>
+                    <ul>
+                        <li><strong>Product Volume Ranking:</strong> Identifies bestsellers alongside remaining stock to prevent stockouts of high-demand items.</li>
+                        <li><strong>Category Contribution:</strong> Percentage revenue split across departments.</li>
+                        <li><strong>One-Click Management Printing:</strong> Dedicated store summary print format.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Test Results Table -->
+            <div class="section-title">✅ System Verification & Test Matrix</div>
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th style="width: 14%;">Test Case</th>
+                        <th style="width: 26%;">Scenario</th>
+                        <th style="width: 32%;">Expected Result</th>
+                        <th style="width: 16%;">Actual Output</th>
+                        <th style="width: 12%; text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>TC-01</strong></td>
+                        <td>Add SKU with low stock (Qty: 3, Threshold: 5)</td>
+                        <td>Product flagged in Low-Stock Alert Center</td>
+                        <td>Amber alert badge displayed</td>
+                        <td style="text-align:center;"><span class="tag-pill tag-pill-success">PASS</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>TC-02</strong></td>
+                        <td>Checkout 2 Notebooks (Stock: 35)</td>
+                        <td>Stock decrements to 33 in single atomic transaction</td>
+                        <td>Stock: 33; Invoice created</td>
+                        <td style="text-align:center;"><span class="tag-pill tag-pill-success">PASS</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>TC-03</strong></td>
+                        <td>Cart exceeds available stock</td>
+                        <td>Checkout blocked with shortage warning</td>
+                        <td>Stock shortage modal alert</td>
+                        <td style="text-align:center;"><span class="tag-pill tag-pill-success">PASS</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>TC-04</strong></td>
+                        <td>Currency conversion to Indian Words</td>
+                        <td>₹541.75 -> Indian Rupees Five Hundred Forty-One...</td>
+                        <td>Rendered on Tax Invoice</td>
+                        <td style="text-align:center;"><span class="tag-pill tag-pill-success">PASS</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>TC-05</strong></td>
+                        <td>End-of-Day Z-Report calculation</td>
+                        <td>Sum today's invoices, gross revenue, items sold</td>
+                        <td>KPI tiles match database</td>
+                        <td style="text-align:center;"><span class="tag-pill tag-pill-success">PASS</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Summary Conclusion -->
+            <div class="info-box" style="margin-top: 4px; padding: 4px 7px;">
+                <p style="font-size: 7.5pt; color: #334155;">
+                    <strong>Conclusion:</strong> The system successfully eliminates manual retail errors through an atomic, zero-framework Java Servlets, JDBC, and MySQL architecture, providing small enterprises with immediate inventory synchronization, formal compliance invoicing, and actionable executive sales reporting.
+                </p>
+            </div>
+        </div>
+
+        <div class="page-footer">
+            <span>Suraj Gusain · Siddhesh Jagtap · Saurabh Mishra</span>
+            <span>Page 2 of 2</span>
+        </div>
+    </div>
+
+</body>
+</html>
