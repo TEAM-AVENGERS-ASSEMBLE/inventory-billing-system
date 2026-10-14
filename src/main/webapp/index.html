@@ -12,8 +12,75 @@
 </head>
 <body>
 
+    <!-- ============================================================== -->
+    <!-- LOGIN PORTAL (Displayed when unauthenticated)                 -->
+    <!-- ============================================================== -->
+    <div id="login-view" class="login-view" style="display: none;">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-icon-badge">📦</div>
+                <h1 class="login-title">Inventory & Billing System</h1>
+                <p class="login-subtitle">POS Terminal & Stock Management Portal</p>
+            </div>
+
+            <div id="login-alert" class="login-alert" style="display: none;">
+                <span>⚠️</span>
+                <span id="login-alert-text">Invalid username or password.</span>
+            </div>
+
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="login-username">Terminal Username</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="login-username" class="form-input" placeholder="e.g. admin or cashier" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="login-password">Password</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="login-password" class="form-input" placeholder="Enter password" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label class="form-label" for="login-role">Terminal Station Role</label>
+                    <select id="login-role" class="form-select">
+                        <option value="admin">Store Admin / Manager (Full Access)</option>
+                        <option value="cashier">POS Cashier (Billing & Invoicing)</option>
+                    </select>
+                </div>
+
+                <button type="submit" id="btn-login-submit" class="btn btn-primary btn-block btn-login">
+                    <span id="login-btn-text">Sign In to Terminal</span>
+                </button>
+            </form>
+
+            <div class="login-divider">
+                <span>Quick Demo Accounts</span>
+            </div>
+
+            <div class="quick-login-grid">
+                <button type="button" class="btn-demo-account" onclick="fillQuickLogin('admin', 'admin123', 'admin')">
+                    <span class="demo-account-role">👤 Store Admin</span>
+                    <span class="demo-account-creds">admin / admin123</span>
+                </button>
+                <button type="button" class="btn-demo-account" onclick="fillQuickLogin('cashier', 'cashier123', 'cashier')">
+                    <span class="demo-account-role">🏷️ POS Cashier</span>
+                    <span class="demo-account-creds">cashier / cashier123</span>
+                </button>
+            </div>
+
+            <div class="login-footer-info">
+                <span>Java Servlets 4.0 · JDBC · MySQL · Dual Mode POS</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Header Section (Matches Slide 1 Navy Branding) -->
-    <header class="app-header">
+    <header class="app-header" id="app-header">
         <div class="header-container">
             <div class="brand">
                 <div class="brand-icon">📦</div>
@@ -24,6 +91,16 @@
             </div>
 
             <div class="header-actions">
+                <!-- User Profile & Logout -->
+                <div id="user-profile-badge" class="user-profile-badge" style="display: none;">
+                    <span class="user-avatar-icon">👤</span>
+                    <div class="user-meta">
+                        <span id="current-user-name" class="user-meta-name">Admin</span>
+                        <span id="current-user-role" class="user-meta-role">Store Admin</span>
+                    </div>
+                    <button type="button" class="btn-logout" onclick="logoutUser()" title="Sign out of POS terminal">Logout</button>
+                </div>
+
                 <div id="backend-status" class="status-badge status-live">
                     <span class="status-dot"></span>
                     <span id="backend-status-text">Connecting...</span>

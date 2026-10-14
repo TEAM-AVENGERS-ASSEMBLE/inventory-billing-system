@@ -15,6 +15,20 @@ USE inventory_db;
 DROP TABLE IF EXISTS sale_items;
 DROP TABLE IF EXISTS sales;
 DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS users;
+
+-- ====================================================================
+-- 2b. Users Table (Authentication & Terminal Access)
+-- ====================================================================
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    role VARCHAR(30) NOT NULL DEFAULT 'cashier',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_username (username)
+) ENGINE=InnoDB;
 
 -- ====================================================================
 -- 3. Products Table (Inventory)

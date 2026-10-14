@@ -8,6 +8,7 @@
 let catalogProducts = [];
 let billingCart = [];
 let currentReceiptData = null;
+let currentUser = null;
 
 // =============================================================================
 // Initialization
@@ -17,12 +18,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isLive = await window.api.checkBackendHealth();
     updateBackendStatusBadge(isLive);
 
-    // 2. Initial Data Load
-    await refreshAllData();
+    // 2. Check Auth State
+    currentUser = window.api.getCurrentUser();
+    if (!currentUser) {
+        showLoginView();
+    } else {
+        showAppView(currentUser);
+        await refreshAllData();
+    }
 
     // 3. Set default date filter to today
     const today = new Date().toISOString().slice(0, 10);
-    const fromInput = document.getElementById('filter-from-date');
     const toInput = document.getElementById('filter-to-date');
     if (toInput) toInput.value = today;
 
@@ -33,6 +39,95 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
+
+// =============================================================================
+// Authentication & Terminal Session
+// =============================================================================
+function showLoginView() {
+    const loginView = document.getElementById('login-view');
+    const appHeader = document.getElementById('app-header');
+    const appMain = document.querySelector('.app-main');
+    const appFooter = document.querySelector('.app-footer');
+    const userBadge = document.getElementById('user-profile-badge');
+
+    if (loginView) loginView.style.display = 'flex';
+    if (appHeader) appHeader.style.display = 'none';
+    if (appMain) appMain.style.display = 'none';
+    if (appFooter) appFooter.style.display = 'none';
+    if (userBadge) userBadge.style.display = 'none';
+}
+
+function showAppView(user) {
+    const loginView = document.getElementById('login-view');
+    const appHeader = document.getElementById('app-header');
+    const appMain = document.querySelector('.app-main');
+    const appFooter = document.querySelector('.app-footer');
+    const userBadge = document.getElementById('user-profile-badge');
+    const userNameElem = document.getElementById('current-user-name');
+    const userRoleElem = document.getElementById('current-user-role');
+
+    if (loginView) loginView.style.display = 'none';
+    if (appHeader) appHeader.style.display = 'block';
+    if (appMain) appMain.style.display = 'block';
+    if (appFooter) appFooter.style.display = 'block';
+
+    if (userBadge && user) {
+        userBadge.style.display = 'inline-flex';
+        if (userNameElem) userNameElem.textContent = user.fullName || user.username;
+        if (userRoleElem) userRoleElem.textContent = user.role === 'admin' ? 'Store Admin' : 'POS Cashier';
+    }
+}
+
+async function handleLogin(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const usernameInput = document.getElementById('login-username');
+    const passwordInput = document.getElementById('login-password');
+    const roleSelect = document.getElementById('login-role');
+    const alertBox = document.getElementById('login-alert');
+    const alertText = document.getElementById('login-alert-text');
+    const btnSubmit = document.getElementById('btn-login-submit');
+
+    if (alertBox) alertBox.style.display = 'none';
+    if (btnSubmit) btnSubmit.disabled = true;
+
+    try {
+        const user = await window.api.login(usernameInput.value, passwordInput.value, roleSelect.value);
+        currentUser = user;
+        showAppView(user);
+        await refreshAllData();
+    } catch (err) {
+        if (alertBox && alertText) {
+            alertText.textContent = err.message || 'Login failed. Please check credentials.';
+            alertBox.style.display = 'flex';
+        }
+    } finally {
+        if (btnSubmit) btnSubmit.disabled = false;
+    }
+}
+
+function fillQuickLogin(username, password, role) {
+    const usernameInput = document.getElementById('login-username');
+    const passwordInput = document.getElementById('login-password');
+    const roleSelect = document.getElementById('login-role');
+    const alertBox = document.getElementById('login-alert');
+
+    if (usernameInput) usernameInput.value = username;
+    if (passwordInput) passwordInput.value = password;
+    if (roleSelect) roleSelect.value = role;
+    if (alertBox) alertBox.style.display = 'none';
+
+    handleLogin(new Event('submit'));
+}
+
+function logoutUser() {
+    if (confirm('Are you sure you want to log out of the terminal?')) {
+        window.api.logout();
+        currentUser = null;
+        const passwordInput = document.getElementById('login-password');
+        if (passwordInput) passwordInput.value = '';
+        showLoginView();
+    }
+}
 
 function updateBackendStatusBadge(isLive) {
     const badge = document.getElementById('backend-status');

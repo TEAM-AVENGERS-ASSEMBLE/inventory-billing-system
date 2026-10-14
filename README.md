@@ -21,6 +21,7 @@
 - **🛒 Instant POS Checkout**: Single-click billing, real-time cart validation, and automated tax calculations (CGST/SGST @ 2.5%).
 - **🔒 Atomic Stock Deductions**: Isolated JDBC transactions with `SELECT ... FOR UPDATE` row locking prevent race conditions and overselling.
 - **🧾 Legal Tax Invoice**: Instant printable cash memos with customer metadata, GSTIN, HSN codes, and **Indian Currency Amount-in-Words** (`₹541.75` → *"Five Hundred Forty-One and Seventy-Five Paise Only"*).
+- **🔐 Terminal Sign In & RBAC**: Secure role-based authentication portal for **Store Admin** and **POS Cashier** with quick demo logins (`admin / admin123` & `cashier / cashier123`).
 - **⚠️ Low-Stock Alerts**: Real-time warning center for products at or below safety buffer thresholds.
 - **📊 Business Analytics**: Automated End-of-Day (Z-Report), 7-day revenue velocity, and fast-moving inventory rankings.
 - **🌐 Dual-Mode Deployment**: Connects live to Java Servlets & MySQL, or runs 100% client-side via LocalStorage for zero-dependency demos and Vercel hosting.

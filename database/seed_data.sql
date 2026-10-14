@@ -5,6 +5,12 @@
 
 USE inventory_db;
 
+-- 0. Insert Terminal Users for Authentication
+INSERT INTO users (username, password_hash, full_name, role) VALUES
+('admin', 'admin123', 'Suraj Gusain (Store Admin)', 'admin'),
+('cashier', 'cashier123', 'Saurabh Mishra (POS Cashier)', 'cashier'),
+('siddhesh', 'password', 'Siddhesh Jagtap (Database Architect)', 'admin');
+
 -- 1. Insert Initial Product Catalog
 -- Includes healthy stock, low-stock items (<= threshold), and zero-stock items
 INSERT INTO products (sku, name, category, price, stock_quantity, low_stock_threshold) VALUES

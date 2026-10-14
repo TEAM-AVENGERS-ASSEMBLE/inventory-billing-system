@@ -58,6 +58,12 @@ const DEFAULT_SALES = [
     }
 ];
 
+const DEFAULT_USERS = [
+    { username: 'admin', password: 'admin123', fullName: 'Suraj Gusain (Store Admin)', role: 'admin' },
+    { username: 'cashier', password: 'cashier123', fullName: 'Saurabh Mishra (POS Cashier)', role: 'cashier' },
+    { username: 'siddhesh', password: 'password', fullName: 'Siddhesh Jagtap (Database)', role: 'admin' }
+];
+
 class InventoryApiClient {
     constructor() {
         this.isLiveBackend = false;
@@ -70,6 +76,65 @@ class InventoryApiClient {
         }
         if (!localStorage.getItem('inv_sales')) {
             localStorage.setItem('inv_sales', JSON.stringify(DEFAULT_SALES));
+        }
+        if (!localStorage.getItem('inv_users')) {
+            localStorage.setItem('inv_users', JSON.stringify(DEFAULT_USERS));
+        }
+    }
+
+    // =========================================================================
+    // Authentication API (Live Servlet or Client Demo Mode)
+    // =========================================================================
+    async login(username, password, role = 'admin') {
+        const cleanUser = (username || '').trim().toLowerCase();
+        const cleanPass = (password || '').trim();
+
+        if (this.isLiveBackend) {
+            try {
+                const res = await fetch(`${API_BASE}/auth`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: cleanUser, password: cleanPass, role: role })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    sessionStorage.setItem('inv_current_user', JSON.stringify(data));
+                    return data;
+                }
+                const err = await res.json();
+                throw new Error(err.error || 'Authentication failed');
+            } catch (err) {
+                if (this.isLiveBackend && !err.message.includes('fetch')) throw err;
+            }
+        }
+
+        // Local Storage / Demo Simulation
+        const users = JSON.parse(localStorage.getItem('inv_users') || JSON.stringify(DEFAULT_USERS));
+        const matched = users.find(u => u.username.toLowerCase() === cleanUser && u.password === cleanPass);
+
+        if (!matched) {
+            throw new Error('Invalid credentials. Demo accounts: admin / admin123 or cashier / cashier123');
+        }
+
+        const sessionUser = {
+            username: matched.username,
+            fullName: matched.fullName || matched.username,
+            role: matched.role || role
+        };
+
+        sessionStorage.setItem('inv_current_user', JSON.stringify(sessionUser));
+        return sessionUser;
+    }
+
+    getCurrentUser() {
+        const raw = sessionStorage.getItem('inv_current_user');
+        return raw ? JSON.parse(raw) : null;
+    }
+
+    logout() {
+        sessionStorage.removeItem('inv_current_user');
+        if (this.isLiveBackend) {
+            fetch(`${API_BASE}/auth?action=logout`, { method: 'POST' }).catch(() => {});
         }
     }
 

@@ -57,6 +57,15 @@
         <url-pattern>/api/analytics</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>AuthServlet</servlet-name>
+        <servlet-class>com.inventory.servlet.AuthServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AuthServlet</servlet-name>
+        <url-pattern>/api/auth</url-pattern>
+    </servlet-mapping>
+
     <!-- Global Character Encoding Filter -->
     <filter>
         <filter-name>CharacterEncodingFilter</filter-name>

@@ -58,6 +58,7 @@ public class AppServer {
         server.createContext("/api/sales", new SalesHistoryHandler());
         server.createContext("/api/dashboard", new DashboardHandler());
         server.createContext("/api/analytics", new AnalyticsHandler());
+        server.createContext("/api/auth", new AuthHandler());
 
         // Static Web Files Context
         server.createContext("/", new StaticFileHandler());
@@ -270,6 +271,93 @@ public class AppServer {
             } catch (Exception e) {
                 sendResponse(exchange, 500, "application/json", "{\"error\":\"" + e.getMessage() + "\"}");
             }
+        }
+    }
+
+    static class AuthHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            setCorsHeaders(exchange);
+            String method = exchange.getRequestMethod();
+
+            if ("OPTIONS".equalsIgnoreCase(method)) {
+                sendResponse(exchange, 200, "text/plain", "");
+                return;
+            }
+
+            if ("POST".equalsIgnoreCase(method)) {
+                try {
+                    String query = exchange.getRequestURI().getQuery();
+                    Map<String, String> params = parseQueryParams(query);
+                    if ("logout".equalsIgnoreCase(params.get("action"))) {
+                        sendResponse(exchange, 200, "application/json", "{\"success\":true,\"message\":\"Logged out\"}");
+                        return;
+                    }
+
+                    String body = readRequestBody(exchange);
+                    JsonObject json = gson.fromJson(body, JsonObject.class);
+
+                    if (json == null || !json.has("username") || !json.has("password")) {
+                        sendResponse(exchange, 400, "application/json", "{\"error\":\"Username and password are required\"}");
+                        return;
+                    }
+
+                    String username = json.get("username").getAsString().trim();
+                    String password = json.get("password").getAsString().trim();
+                    String role = json.has("role") ? json.get("role").getAsString() : "cashier";
+
+                    JsonObject user = null;
+                    String sql = "SELECT username, full_name, role FROM users WHERE LOWER(username) = LOWER(?) AND password_hash = ?";
+                    try (java.sql.Connection conn = DBConnection.getConnection();
+                         java.sql.PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setString(1, username);
+                        stmt.setString(2, password);
+                        try (java.sql.ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                user = new JsonObject();
+                                user.addProperty("username", rs.getString("username"));
+                                user.addProperty("fullName", rs.getString("full_name"));
+                                user.addProperty("role", rs.getString("role"));
+                                user.addProperty("authenticated", true);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+
+                    if (user == null) {
+                        String lower = username.toLowerCase();
+                        if ("admin".equals(lower) && "admin123".equals(password)) {
+                            user = new JsonObject();
+                            user.addProperty("username", "admin");
+                            user.addProperty("fullName", "Suraj Gusain (Store Admin)");
+                            user.addProperty("role", "admin");
+                            user.addProperty("authenticated", true);
+                        } else if ("cashier".equals(lower) && "cashier123".equals(password)) {
+                            user = new JsonObject();
+                            user.addProperty("username", "cashier");
+                            user.addProperty("fullName", "Saurabh Mishra (POS Cashier)");
+                            user.addProperty("role", "cashier");
+                            user.addProperty("authenticated", true);
+                        } else if ("siddhesh".equals(lower) && "password".equals(password)) {
+                            user = new JsonObject();
+                            user.addProperty("username", "siddhesh");
+                            user.addProperty("fullName", "Siddhesh Jagtap (Database Architect)");
+                            user.addProperty("role", "admin");
+                            user.addProperty("authenticated", true);
+                        }
+                    }
+
+                    if (user != null) {
+                        sendResponse(exchange, 200, "application/json", user.toString());
+                    } else {
+                        sendResponse(exchange, 401, "application/json", "{\"error\":\"Invalid username or password. Demo: admin / admin123\"}");
+                    }
+                } catch (Exception e) {
+                    sendResponse(exchange, 500, "application/json", "{\"error\":\"Auth error: " + e.getMessage() + "\"}");
+                }
+                return;
+            }
+
+            sendResponse(exchange, 405, "application/json", "{\"error\":\"Method Not Allowed\"}");
         }
     }
 
