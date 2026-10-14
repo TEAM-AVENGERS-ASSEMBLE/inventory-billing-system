@@ -1,4 +1,4 @@
-# 📦 Inventory & Billing System
+#                        📦 Inventory & Billing System
 
 [![Java](https://img.shields.io/badge/Java-Servlets_4.0-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
 [![MySQL](https://img.shields.io/badge/MySQL-InnoDB-00758F?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
