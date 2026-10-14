@@ -1,4 +1,6 @@
-#                        📦 Inventory & Billing System
+<div align="center">
+
+# 📦 Inventory & Billing System
 
 [![Java](https://img.shields.io/badge/Java-Servlets_4.0-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
 [![MySQL](https://img.shields.io/badge/MySQL-InnoDB-00758F?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
@@ -6,7 +8,11 @@
 [![Vercel Ready](https://img.shields.io/badge/Deploy-Vercel-black?style=flat-square&logo=vercel&logoColor=white)](https://vercel.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
+<br/>
+
 > **High-performance retail stock tracking, sub-second POS checkout, and GST tax invoicing built with core Java, JDBC, and standard web technologies—zero external frameworks.**
+
+</div>
 
 ---
 
